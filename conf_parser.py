@@ -12,7 +12,7 @@ class FortiGate:
         self.parsed_policy = {}                     # 解析配置文件
         self.max_level = max_level                  # 支持最大的缩进层级数
         
-    def parse_policy(self):
+    def parse_policy(self) -> dict:
         if not os.path.exists(self.path):
             print("File path is invalid.")
             return None
@@ -59,7 +59,7 @@ class FortiGate:
         del _line_Buf, _out_Buf
         return {"ANNOTATION": self.annotation, "CONFIG": self.parsed_policy}
 
-    def _check_anno(self, line):
+    def _check_anno(self, line) -> bool:
         if isinstance(line, str) and line[0] == "#":
             return 1
         return 0
@@ -70,8 +70,8 @@ class FortiGate:
 
 if __name__ == "__main__":
     # 配置文件位置 和 解析输出位置
-    conf_path = r"D:\workspace\network_utils\doc\cfgbackup_ft_fw01.conf"
-    out_path = "output.json"
+    conf_path = "doc/FortiGate01.conf"
+    out_path = "doc/output.json"
 
     FT = FortiGate(conf_path)
     p = FT.parse_policy()

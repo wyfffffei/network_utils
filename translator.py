@@ -4,6 +4,8 @@ import urllib
 import random
 import json
 import time
+import os
+from tqdm import tqdm
 
 
 class Baidu_Translator:
@@ -16,7 +18,6 @@ class Baidu_Translator:
         self.salt = random.randint(32768, 65536)
 
     def translate(self, q, fromLang="auto", toLang="zh") -> dict:
-        time.sleep(1)
         sign = self.appid + q + str(self.salt) + self.secretKey
         sign = hashlib.md5(sign.encode()).hexdigest()
         url = self.url + '?appid=' + self.appid + '&q=' + urllib.parse.quote(q) + '&from=' + fromLang + '&to=' + toLang + '&salt=' + str(
@@ -38,6 +39,28 @@ class Baidu_Translator:
             if httpClient:
                 httpClient.close()
 
+    def translate_file(self, path, fromLang="auto", toLang="zh", is_save=False) -> list:
+        if not os.path.exists(path):
+            print("File path is invalid.")
+            return None
+    
+        with open(path, 'r', encoding="utf-8") as f:
+            lines = [line.strip() for line in f.readlines()]
+            words = set(lines)
+        
+        brain = {}
+        for word in tqdm(words):
+            time.sleep(1)
+            ans = self.translate(word, fromLang=fromLang, toLang=toLang)
+            brain[word] = ans["trans_result"][0]["dst"]
+        
+        if is_save:
+            # save the dict translation with json
+            from tools import dict2json
+            dict2json(brain, "doc/translation_{}.json".format(time.strftime("%Y%m%d%H%M%S", time.localtime())))
+        
+        return [brain[line] for line in lines]
+
 
 if __name__ == "__main__":
     # read the key
@@ -45,5 +68,12 @@ if __name__ == "__main__":
         appid, secretKey = f.readlines()[0].strip().split(",")
     
     bt = Baidu_Translator(appid, secretKey)
-    res = bt.translate("banana")
-    print(res)
+    
+    # 翻译单词
+    # res = bt.translate("banana")
+    # print(res)
+
+    # 翻译文件（逐行翻译，逐行输出）
+    res = bt.translate_file("doc/words.txt", is_save=True)
+    with open("doc/output.txt", "w", encoding="utf-8") as f:
+        f.writelines([w + "\n" for w in res])

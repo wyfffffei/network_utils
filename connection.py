@@ -1,9 +1,7 @@
-#!/usr/bin/env python3
-
 import time
 import sys
 import re
-import getpass
+
 
 try:
     import paramiko
@@ -80,7 +78,7 @@ class Connection:
         return stdout
 
     def send_command_file(self, command_file, confirm_flag=None):
-        with open(command_file, 'r') as f:
+        with open(command_file, 'r', encoding="utf-8") as f:
             commands = f.readlines()
         for cmd in commands:
             yield self.send_one_command(cmd, confirm_flag=confirm_flag)
@@ -90,33 +88,29 @@ class Connection:
             self.client.close()
 
 
-def main():
-    # ip = input("IP_ADDRESS: ")
-    # username = input("username: ")
-    # password = getpass.getpass("password: ")
-    ip = "192.168.56.200"
-    username = "admin"
-    # username = "test"
-    password = "1qaz2wsx"
-    client = Connection(ip, username=username, password=password)
-
-    try:
-        command_file = sys.argv[1]
-        confirm_flag = {
-                "'s password:": "centos",
-                "Enter expert password:": "1qaz2wsx",
-                "Are you sure you want to continue?(Y/N)[N]": "y"
-                }
-        for stdout in client.send_command_file(command_file, confirm_flag=confirm_flag):
-            print(stdout)
-    except IndexError as e:
-        print(e)
-        print("no file name parameter was found, please add the parameter after the command")
-
-    client.close()
-
-
 if __name__ == "__main__":
-    main()
-
+    ip = input("IP_ADDRESS: ")
+    username = input("username: ")
+    
+    try:
+        from getpass import getpass
+        password = getpass("password: ")
+    except ImportError:
+        print("getpass is not installed.")
+        password = input("password: ")
+    
+    client = Connection(ip, username=username, password=password)
+    # 逐行读取在远程执行的命令
+    command_file = "doc/centos_nginx"
+    
+    # 捕获额外需要输入的提示，返回对应的输入
+    confirm_flag = {
+        "'s password:": "centos",
+        "Enter expert password:": "centos",
+        "Are you sure you want to continue?(Y/N)[N]": "y"
+        }
+    # 实时返回远程输出信息
+    for stdout in client.send_command_file(command_file, confirm_flag=confirm_flag):
+        print(stdout)
+    client.close()
 

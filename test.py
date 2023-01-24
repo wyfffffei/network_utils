@@ -1,12 +1,20 @@
 
 def forigate_test():
-    from tools import json2dict, dict2json
-    out_path = "output.json"
+    from tools import dict2json
+    from conf_parser import FortiGate
+    # 配置文件位置 和 解析输出位置
+    conf_path = "doc/FortiGate01.conf"
+    out_path = "doc/output.json"
+
+    FT = FortiGate(conf_path)
+    p = FT.parse_policy()
+    # print(p)
+
+    dict2json(p, out_path)
 
     # 查看飞塔防火墙策略
-    aa = json2dict(out_path)
-    ff = aa["CONFIG"]["config firewall policy"]
-    for i in ff:
+    fp = p["CONFIG"]["config firewall policy"]
+    for i in fp:
         for _, attr in i.items():
             print(_)
             print(attr)
@@ -15,9 +23,8 @@ def forigate_test():
             print()
 
     # 查看飞塔防火墙用户和创建时间
-    aa = json2dict(out_path)
-    ff = aa["CONFIG"]["config user local"]
-    for i in ff:
+    fu = p["CONFIG"]["config user local"]
+    for i in fu:
         for user, password in i.items():
             print("%-20s" % user[6:-1], end="")
             flag = 0

@@ -20,7 +20,7 @@ python xxx.py
 
 解析配置文件到 `dict` 或者 `json` 格式，目前支持👇：
 
-- 飞塔防火墙
+- 飞塔防火墙（图形界面 `backup` 文件）
 
 ```bash
 # 主函数部分
@@ -35,6 +35,17 @@ if __name__ == "__main__":
 
     from tools import dict2json
     dict2json(p, out_path)
+```
+
+- CheckPoint 网关（`save configuration`）
+
+```python
+# 主函数部分
+if __name__ == "__main__":
+    conf_path = "doc/gaia_os_cp_gw.txt"
+    CP = CheckPoint(conf_path)
+    conf = CP.parse_configuration()
+    print(conf["set"]["installer"]["policy"])
 ```
 
 

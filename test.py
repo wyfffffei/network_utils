@@ -1,7 +1,7 @@
 
 def forigate_test():
-    from tools import dict2json
-    from conf_parser import FortiGate
+    from .tools import dict2json
+    from .conf_parser import FortiGate
     # 配置文件位置 和 解析输出位置
     conf_path = "doc/FortiGate01.conf"
     out_path = "doc/output.json"
@@ -37,7 +37,7 @@ def forigate_test():
 
 
 def excel_test():
-    from tools import append_excel
+    from .tools import append_excel
     name = "1.xlsx"
     wb = append_excel(name)
     ws = wb.worksheets[0]

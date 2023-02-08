@@ -2,16 +2,35 @@
 
 网络工具包。
 
-依赖（可选）：
+- 依赖
 
 ```bash
 pip install tqdm
 ```
 
-执行：（**python3**）
+- 直接调用（**python3**）
 
 ```bash
 python xxx.py
+```
+
+- 包引用（示例）
+
+```python
+# package path: D:\workspace\network_utils
+# ├─ anywhere
+#    ├─ script.py
+#    └─ cfgbackup_ft_fw01.conf
+
+# script.py
+import sys
+sys.path.append(r"D:\workspace")
+
+from network_utils.conf_parser import FortiGate
+from network_utils.tools import dict2json
+
+FT = FortiGate("cfgbackup_ft_fw01.conf")
+dict2json(FT.parse_policy(), "output.json")
 ```
 
 
@@ -123,6 +142,12 @@ if __name__ == "__main__":
 ## filter.py
 
 `python`过滤器。
+
+- 依赖
+
+```bash
+pip install pandas
+```
 
 - 过滤表格的时间列
 

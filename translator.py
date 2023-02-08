@@ -56,8 +56,8 @@ class Baidu_Translator:
         
         if is_save:
             # save the dict translation with json
-            from tools import dict2json
-            dict2json(brain, "doc/translation_{}.json".format(time.strftime("%Y%m%d%H%M%S", time.localtime())))
+            from .tools import dict2json
+            dict2json(brain, "translation_{}.json".format(time.strftime("%Y%m%d%H%M%S", time.localtime())))
         
         return [brain[line] for line in lines]
 

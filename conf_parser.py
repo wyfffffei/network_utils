@@ -2,16 +2,38 @@ import os
 from tqdm import tqdm
 
 
-class FortiGate:
+class NetworkObject(object):
     # 解析的内容
-    __parse_line = ['#', 'config', 'end', 'edit', 'next', 'set', 'unset']
+    __parsed_line = []
+
+    def __init__(self, path) -> None:
+        self.path = path                            # 配置路径
+        self.annotation = []                       # 配置头（注释）
+        self.policy = []                            # 策略源数据
+        self.configuration = []                     # 配置源数据
+        self.parsed_policy = {}                     # 策略（解析后）
+        self.parsed_configuration = {}              # 配置（解析后）
+
+    def parse_policy(self) -> any:
+        pass
+
+    def _check_anno(self, line) -> bool:
+        if line and isinstance(line, str) and line[0] == '#':
+            return 1
+        return 0
+    
+    def _parse_ANNO(self, line) -> None:
+        self.annotation.append(line)
+
+
+class FortiGate(NetworkObject):
+    # 解析的内容
+    __parsed_line = ['#', 'config', 'end', 'edit', 'next', 'set', 'unset']
 
     def __init__(self, path, max_level=10):
-        self.path = path                            # 配置路径
-        self.annotation = []                        # 配置头（注释）
-        self.policy = []                            # 配置源文件
-        self.parsed_policy = {}                     # 解析配置文件
-        self.max_level = max_level                  # 支持最大的缩进层级数
+        NetworkObject.__init__(self, path)
+        # 支持最大的缩进层级数（飞塔防火墙）
+        self.max_level = max_level
         
     def parse_policy(self) -> dict:
         if not os.path.exists(self.path):
@@ -60,23 +82,13 @@ class FortiGate:
         del _line_Buf, _out_Buf
         return {"ANNOTATION": self.annotation, "CONFIG": self.parsed_policy}
 
-    def _check_anno(self, line) -> bool:
-        if isinstance(line, str) and line[0] == "#":
-            return 1
-        return 0
 
-    def _parse_ANNO(self, line):
-        self.annotation.append(line)
-
-
-class CheckPoint:
-    # 解析的内容（ <- save configuration）
+class CheckPoint(NetworkObject):
+    # 解析的内容
+    __parsed_line = ["save configuration"]
 
     def __init__(self, path):
-        self.path = path                            # 配置路径
-        self.annotations = []                       # 配置头（注释）
-        self.configuration = []                     # 配置源文件
-        self.parsed_configuration = {}              # 解析配置文件
+        NetworkObject.__init__(self, path)
 
     def parse_configuration(self) -> dict:
         if not os.path.exists(self.path):
@@ -105,14 +117,6 @@ class CheckPoint:
                 continue
             p[item] = {}
             p = p[item]
-
-    def _check_anno(self, line) -> bool:
-        if line and isinstance(line, str) and line[0] == "#":
-            return 1
-        return 0
-
-    def _parse_ANNO(self, line):
-        self.annotations.append(line)
 
 
 if __name__ == "__main__":

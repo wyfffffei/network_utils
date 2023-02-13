@@ -24,7 +24,8 @@ python xxx.py
 
 # script.py
 import sys
-sys.path.append(r"D:\workspace")
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from network_utils.conf_parser import FortiGate
 from network_utils.tools import dict2json

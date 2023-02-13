@@ -45,5 +45,10 @@ def excel_test():
     wb.save(name)
 
 
+def arg_test():
+    import os
+    print(os.path.dirname(os.path.abspath(__file__)).split(os.sep)[-1])
+
+
 if __name__ == "__main__":
-    excel_test()
+    arg_test()

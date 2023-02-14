@@ -1,5 +1,7 @@
 import os
 import json
+import textwrap
+from argparse import HelpFormatter
 
 
 def json2dict(path):
@@ -30,4 +32,6 @@ def append_excel(path):
         print(e)
         return None
     
-    
+class RawFormatter(HelpFormatter):
+    def _fill_text(self, text, width, indent):
+        return "\n".join([textwrap.fill(line, width) for line in textwrap.indent(textwrap.dedent(text), indent).splitlines()])

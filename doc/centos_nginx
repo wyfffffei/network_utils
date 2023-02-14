@@ -1,1 +1,2 @@
 more /etc/nginx/nginx.conf
+firewall-cmd --list-all

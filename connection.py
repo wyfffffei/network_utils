@@ -11,8 +11,9 @@ except ImportError:
 
 
 class Connection:
-    def __init__(self, ip, username, password, port=22) -> None:
+    def __init__(self, ip, username, password, port=22, retry=10) -> None:
         self.client = paramiko.SSHClient()
+        self.retry = retry
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         try:
             self.client.connect(ip, port=port, username=username, password=password)
@@ -27,7 +28,7 @@ class Connection:
             self.client.close()
             sys.exit(-1)
 
-    def wait_response(self, retry=10):
+    def wait_response(self):
         attempt = 0
         while True:
             time.sleep(0.5)
@@ -35,7 +36,7 @@ class Connection:
                 response = self.shell.recv(4096)
                 break
             attempt += 1
-            if attempt >= retry:
+            if attempt >= self.retry:
                 response = b''
                 break
         return response
@@ -66,7 +67,7 @@ class Connection:
                 continue
             # 匹配是否出现hostname，出现则终止接收(有待测试)
             if re.compile(r"%s[#>\]]\s*$" %self.hostname):
-                break
+                pass
         return output
 
     def send_one_command(self, command, confirm_flag=None):

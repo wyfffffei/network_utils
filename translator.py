@@ -5,6 +5,7 @@ import random
 import json
 import time
 import os
+import sys
 from tqdm import tqdm
 
 
@@ -56,13 +57,16 @@ class Baidu_Translator:
         
         if is_save:
             # save the dict translation with json
-            from .tools import dict2json
+            from network_utils.tools import dict2json
             dict2json(brain, "translation_{}.json".format(time.strftime("%Y%m%d%H%M%S", time.localtime())))
         
         return [brain[line] for line in lines]
 
 
 if __name__ == "__main__":
+    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+    sys.path.append(os.path.dirname(SCRIPT_DIR))
+
     # read the key
     with open("doc/bt_app_sec.txt", "r", encoding="utf-8") as f:
         appid, secretKey = f.readlines()[0].strip().split(",")
@@ -75,5 +79,5 @@ if __name__ == "__main__":
 
     # 翻译文件（逐行翻译，逐行输出）
     res = bt.translate_file("doc/words.txt", is_save=True)
-    with open("doc/output.txt", "w", encoding="utf-8") as f:
+    with open("output/translate_result.txt", "w", encoding="utf-8") as f:
         f.writelines([w + "\n" for w in res])

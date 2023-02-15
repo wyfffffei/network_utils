@@ -14,22 +14,38 @@ if __name__ == "__main__":
         description=
         """
         cheatsheet:
-        python run.py -p cfgbackup_ft_fw01.conf -d ft
-        python run.py -p command_lines.txt -c -na root -ip 192.168.56.102
+        python run.py -p englist_words.txt -t path_of_key.txt  (translator)
+        python run.py -p cfgbackup_ft_fw01.conf -d ft  (config parser)
+        python run.py -p command_lines.txt -c -na root -ip 192.168.56.102  (command sender to remote)
         """,
         formatter_class=RawFormatter
         )
-    parser.add_argument("-p", "--path", type=str, required=True, help="config / command path (required)")
+    parser.add_argument("-p", "--path", type=str, required=True, help="englist words / config / command path (required)")
+    parser.add_argument("-t", "--translate", type=str, help="secretkey file path(content: 'appid,secretkey'), translate file line-by-line")
     parser.add_argument("-d", "--device", type=str, choices=["ft", "cp"], help="network device: ft or cp")
     parser.add_argument("-c", "--connection", action="store_true", help="send commands to the remote")
-    parser.add_argument("-ip", "--ipaddress", type=str, help="remote ip address")
     parser.add_argument("-na", "--username", type=str, help="remote username")
+    parser.add_argument("-ip", "--ipaddress", type=str, help="remote ip address")
     parser.add_argument("-pt", "--port", type=int, default=22, help="remote port")
     parser.add_argument("--password", type=str, help="remote password (unrecommanded)")
     parser.add_argument("--en-password", type=str, help="remote enable password (unrecommanded)")
     arg = parser.parse_args()
 
-    if arg.device:
+    if arg.translate:
+        from network_utils.translator import Baidu_Translator
+        try:
+            with open(arg.translate, "r", encoding="utf-8") as f:
+                appid, secretKey = f.readlines()[0].strip().split(",")
+        except Exception as e:
+            print(e)
+            print("secretkey file path is invalid")
+            sys.exit(-1)
+        bt = Baidu_Translator(appid, secretKey)
+        res = bt.translate_file(arg.path, is_save=True)
+        with open(arg.path.split(os.sep)[-1] + "_translated.txt", "w", encoding="utf-8") as f:
+            f.writelines([w + "\n" for w in res])
+
+    elif arg.device:
         output_path = arg.path.split(os.sep)[-1] + "_parsed.json"
         if arg.device == "ft":
             dict2json(FortiGate(arg.path).parse_policy(), output_path)

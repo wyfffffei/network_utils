@@ -1,0 +1,27 @@
+# 配置虚拟IP和策略
+# python run.py -p doc/ft_vip_policy -i 192.168.216.200 -u admin
+config firewall vip
+    edit "web_server_mirror"
+        set extip 192.168.216.200
+        set mappedip "10.1.1.101"
+        set extintf "port1"
+        set portforward enable
+        set color 17
+        set extport 80
+        set mappedport 80
+    next
+end
+config firewall policy
+    edit 1
+        set name "Inside_2Internet"
+        set srcintf "port3"
+        set dstintf "port2"
+        set srcaddr "all"
+        set dstaddr "all"
+        set action accept
+        set schedule "always"
+        set service "SSH" "HTTP" "HTTPS" "PING"
+        set logtraffic all
+        set nat enable
+    next
+end

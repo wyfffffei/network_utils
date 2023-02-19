@@ -8,7 +8,7 @@ class NetworkObject(object):
 
     def __init__(self, path) -> None:
         self.path = path                            # 配置路径
-        self.annotation = []                       # 配置头（注释）
+        self.annotation = []                        # 配置头（注释）
         self.policy = []                            # 策略源数据
         self.configuration = []                     # 配置源数据
         self.parsed_policy = {}                     # 策略（解析后）

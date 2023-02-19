@@ -12,17 +12,22 @@ except ImportError:
 
 class Connection:
     def __init__(self, ip, username, password, port=22, retry=10) -> None:
-        self.client = paramiko.SSHClient()
+        self._linux_host = re.compile("^\[(\w|-)+@(\w|-)+ (\w|-|/|~)+\]#", re.IGNORECASE)   # 匹配 linux
+        self._device_host = re.compile("^(\w|-)+ \(?(\w|-)*\)? ?#", re.IGNORECASE)          # 匹配 网络设备
         self.retry = retry
+
+        self.client = paramiko.SSHClient()
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         try:
             self.client.connect(ip, port=port, username=username, password=password)
             self.shell= self.client.invoke_shell()
             response = self.wait_response().decode()
             # 正则捕获hostname，只能捕获网络设备
-            hostname = re.compile(r"\S+[#>\]]\s*$").findall(response)
-            self.hostname = hostname[0].strip().strip("<>[]#") if hostname else None
-            print("Successfully login\nIP: {}\nHost name: {}".format(ip, self.hostname))
+            self.hostname = self.check_hostname(response.split("\n")[-1])
+            print("Successfully login.\nIP: {}\nHost name: {}".format(ip, self.hostname))
+            print("Start receiving:")
+            print(40 * '-')
+            print(response, end="")
         except paramiko.AuthenticationException as e:
             print(e)
             self.client.close()
@@ -65,9 +70,6 @@ class Connection:
             if "More" in response:
                 self.shell.send(b"\x20")
                 continue
-            # 匹配是否出现hostname，出现则终止接收(有待测试)
-            if re.compile(r"%s[#>\]]\s*$" %self.hostname):
-                pass
         return output
 
     def send_one_command(self, command, confirm_flag=None):
@@ -83,6 +85,13 @@ class Connection:
             commands = f.readlines()
         for cmd in commands:
             yield self.send_one_command(cmd, confirm_flag=confirm_flag)
+
+    def check_hostname(self, recv):
+        if self._linux_host.match(recv):
+            return self._linux_host.match(recv)[0].split(" ")[0].split("@")[1]
+        if self._device_host.match(recv):
+            return self._device_host.match(recv)[0].split(" ")[0]
+        return None
 
     def close(self):
         if self.client is not None:
@@ -112,6 +121,6 @@ if __name__ == "__main__":
         }
     # 实时返回远程输出信息
     for stdout in client.send_command_file(command_file, confirm_flag=confirm_flag):
-        print(stdout)
+        print(stdout, end="")
     client.close()
 

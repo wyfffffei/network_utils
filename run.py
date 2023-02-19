@@ -72,8 +72,6 @@ if __name__ == "__main__":
             "Enter expert password:": en_password,
             "Are you sure you want to continue?(Y/N)[N]": "y"
         }
-        print("Start receiving:")
-        print(30 * '-')
         for stdout in client.send_command_file(arg.path, confirm_flag=confirm_flag):
             print(stdout, end="")
         client.close()

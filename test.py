@@ -50,5 +50,26 @@ def arg_test():
     print(os.path.dirname(os.path.abspath(__file__)).split(os.sep)[-1])
 
 
+def check_hostname():
+    import re
+    hostname = "[root@centos-7 /etc]#"
+    linux_host = re.compile("^\[(\w|-)+@(\w|-)+ (\w|-|/|~)+\]#", re.IGNORECASE)
+    if linux_host.match(hostname):
+        print(linux_host.match(hostname)[0].split(" ")[0].split("@")[1])
+
+    hostname = """WARNING: File System Check Recommended! An unsafe reboot may have caused an inconsistency in the disk drive.
+It is strongly recommended that you check the file system consistency before proceeding.
+Please run 'execute disk list' and then 'execute disk scan <ref#>'.
+Note: The device will reboot and scan the disk during startup. This may take up to an hour.
+FortiGate-VM64 #"""
+    hostname = hostname.split("\n")[-1]
+    device_host = re.compile("^(\w|-)+ \(?(\w|-)*\)? ?#", re.IGNORECASE)
+    if device_host.match(hostname):
+        print(device_host.match(hostname)[0].split(" ")[0])
+    # print(all(allowed.match(x) for x in hostname.split(".")))
+
+
 if __name__ == "__main__":
-    arg_test()
+    # arg_test()
+    check_hostname()
+    

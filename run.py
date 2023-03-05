@@ -1,8 +1,14 @@
+#! /usr/bin/python3
 import os
 import sys
 import argparse
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+try:
+    SCRIPT_PATH = os.readlink(SCRIPT_DIR + os.sep + "run")
+    SCRIPT_DIR = os.sep.join(SCRIPT_PATH.split(os.sep)[:-1])
+except FileNotFoundError as e:
+    pass
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from network_utils.conf_parser import *
@@ -21,7 +27,8 @@ if __name__ == "__main__":
         formatter_class=RawFormatter
         )
     parser.add_argument("-p", "--path", type=str, required=True, help="english words / config / command path (required)")
-    parser.add_argument("-t", "--translate", type=str, help="secretkey file path(content: 'appid,secretkey'), translate file line-by-line")
+    # parser.add_argument("-t", "--translate", type=str, help="secretkey file path(content: 'appid,secretkey'), translate file line-by-line")
+    parser.add_argument("-t", "--translate", action="store_true", help="translate file line-by-line")
     parser.add_argument("-d", "--device", type=str, choices=["ft", "cp"], help="network device: ft or cp")
     parser.add_argument("-i", "--ipaddress", type=str, help="remote ip address")
     parser.add_argument("-u", "--username", type=str, help="remote username")
@@ -33,7 +40,7 @@ if __name__ == "__main__":
     if arg.translate:
         from network_utils.translator import Baidu_Translator
         try:
-            with open(arg.translate, "r", encoding="utf-8") as f:
+            with open(SCRIPT_DIR + "/doc/bt_app_sec.txt", "r", encoding="utf-8") as f:
                 appid, secretKey = f.readlines()[0].strip().split(",")
         except Exception as e:
             print(e)

@@ -172,14 +172,24 @@ def output_2_excel(ft_policy):
     wb.save(search_hostname(ft_policy) + time.strftime("-%Y%m%d", time.localtime()) + ".xlsx")
 
 
-
 def main():
-    # path = "doc/Rexel_Wuhan_6-4_2092_202307251225.conf_parsed.json"
-    path = "doc/HQ-FW-20230718-parsed.json"
+    import sys
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    sys.path.append(os.sep.join(current_dir.split(os.sep)[:-1]))
 
-    ft_policy = json2dict(path)
+    from conf_parser import FortiGate
+
+    # GLOBAL: 配置源文件路径
+    # path = "conf/Rexel_Wuhan_6-4_2092_202307251225.conf"
+
+    if not sys.argv[1]:
+        print("请添加参数: fortigate配置文件路径")
+        sys.exit(-1)
+    path = sys.argv[1]
+    ft_policy = FortiGate(path).parse_policy()
+
     output_2_excel(ft_policy)
-        
+
 
 if __name__ == "__main__":
     main()

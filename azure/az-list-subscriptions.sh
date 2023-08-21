@@ -3,7 +3,7 @@
 # az cloud set --name AzureChinaCloud
 az login
 
-# 列出Azure中的所有订阅
+# 列出 Azure 中的所有订阅
 accounts=$(az account list | jq '.[].name')
 IFS=$'\n' read -d '' -ra account_array <<< "$accounts"
 

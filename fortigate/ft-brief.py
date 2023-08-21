@@ -5,6 +5,8 @@ import json
 import time
 import ipaddress
 
+# 列出 飞塔 防火墙的相关配置
+# python3 ft-brief.py <ft_config_path>
 
 def json2dict(path):
     if not os.path.exists(path) or path[-5:] != ".json":

@@ -3,11 +3,14 @@ import re
 import time
 import ipaddress
 
-from ciscoconfparse import CiscoConfParse
-
 # pip3 install ciscoconfparse
 # https://github.com/mpenning/ciscoconfparse
 # http://pennington.net/tutorial/ciscoconfparse/ccp_tutorial.html
+
+from ciscoconfparse import CiscoConfParse
+
+# 列出 Cisco ASA 防火墙的相关配置
+# python3 asa-brief.py <cisco_asa_config_path>
 
 # GLOBAL VAR
 _acl_column = ["源端口", "ACL类型", "动作", "协议", "源地址", "目标地址", "端口"]

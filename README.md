@@ -8,12 +8,6 @@
 pip install tqdm
 ```
 
-- 直接调用（**python3**）
-
-```bash
-python xxx.py
-```
-
 - 包引用（示例）
 
 ```python
@@ -38,7 +32,7 @@ dict2json(FT.parse_policy(), "output.json")
 
 ## conf_parser.py
 
-解析配置文件到 `dict` 或者 `json` 格式，目前支持👇：
+将网络配置文件解析为 `dict` 或者 `json` 格式，网络设备包括👇：
 
 - 飞塔防火墙（图形界面 `backup` 文件）
 

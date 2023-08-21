@@ -4,7 +4,15 @@ import json
 import time
 from openpyxl import Workbook
 
+# 列出 Azure 防火墙的策略（先将订阅、资源组、防火墙名称和防火墙策略填入）
+# python3 az-list-fw.policy.py
 # https://learn.microsoft.com/zh-cn/cli/azure/network/firewall/policy/rule-collection-group?view=azure-cli-latest#az-network-firewall-policy-rule-collection-group-list
+
+# GLOBAL VAR
+subscription = ""
+resource_group = ""
+fw_name = "fw-01"
+policy_name = ["fw-01-fp01", "fw-01-fp02"]
 
 def json2dict(path):
     if not os.path.exists(path) or path[-5:] != ".json":
@@ -13,13 +21,6 @@ def json2dict(path):
 
     with open(path, 'r') as f:
         return json.loads(f.read())
-
-# GLOBAL VAR
-subscription = ""
-resource_group = ""
-fw_name = "fw-01"
-policy_name = ["fw-01-fp01", "fw-01-fp02"]
-
 
 wb = Workbook()
 ws = wb.active

@@ -72,8 +72,11 @@ def search_ft_object(config):
 
 def search_ipsecvpn(config):
     # 查找 ipsec vpn 兴趣流
-    _phase1_config = config["CONFIG"]["config vpn ipsec phase1-interface"]
-    _phase2_config = config["CONFIG"]["config vpn ipsec phase2-interface"]
+    try:
+        _phase1_config = config["CONFIG"]["config vpn ipsec phase1-interface"]
+        _phase2_config = config["CONFIG"]["config vpn ipsec phase2-interface"]
+    except Exception as e:
+        return ({}, "")
 
     phase1 = dict()
     for item in _phase1_config:

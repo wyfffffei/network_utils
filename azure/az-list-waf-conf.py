@@ -176,13 +176,12 @@ if __name__ == "__main__":
     parser.add_argument("-u", "--update", action="store_true", required=False, help="run script to update all the config")
     arg = parser.parse_args()
 
-    if arg.update:
-        az_list_listener()
-
     CONF_PATH = time.strftime("waf-conf-%y%m%d", time.localtime())
+    if arg.update:
+        az_list_listener(CONF_PATH)
 
     # WAF和策略文件名称
-    # WAF = "platform-cnn3-p-b2b-appgw01"
+    # WAF = "gw01"
     # POLICY = "waf_policy"
     # output2excel(WAF, POLICY, in_path=CONF_PATH, out_path="P-"+ WAF + ".xlsx")
 

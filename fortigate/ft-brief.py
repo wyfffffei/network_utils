@@ -66,7 +66,7 @@ def search_interface(config):
 
 
 def search_ft_object(config):
-    # 查找 配置对象
+    # TODO: 查找 配置对象
     pass
 
 
@@ -145,6 +145,30 @@ def search_static_route(config):
         yield (route_id, dst, subnet_caculator(dst), gateway, interface, comment, priority, status)
 
 
+def search_vip(config):
+    try:
+        _vip = config["CONFIG"]["config firewall vip"]
+    except Exception as e:
+        print(e)
+        return None
+
+    expip_pat = r"set\sextip\s\d+\.\d+\.\d+\.\d+"
+    mappedip_pat = r"set\smappedip\s\"\d+\.\d+\.\d+\.\d+\""
+    extport_pat = r"set\sextport\s\d+"
+    mappedport_pat = r"set\smappedport\s\d+"
+
+    for ext in _vip:
+        service_name = list(ext.keys())[0].split(" ")[-1][1:-1]
+        ext_config = ' '.join(list(ext.values())[0])
+
+        expip = re.search(expip_pat, ext_config).group().split(" ")[-1] if re.search(expip_pat, ext_config) else ""
+        mappedip = re.search(mappedip_pat, ext_config).group().split(" ")[-1][1:-1] if re.search(mappedip_pat, ext_config) else ""
+        extport = re.search(extport_pat, ext_config).group().split(" ")[-1] if re.search(extport_pat, ext_config) else ""
+        mappedport = re.search(mappedport_pat, ext_config).group().split(" ")[-1] if re.search(mappedport_pat, ext_config) else ""
+
+        yield(service_name, expip, mappedip, extport, mappedport)
+
+
 def output_2_excel(ft_policy):
     from openpyxl import Workbook
     wb = Workbook()
@@ -172,7 +196,13 @@ def output_2_excel(ft_policy):
     ws_route.append(["路由ID", "目标段", "目标段范围", "网关", "接口", "备注", "优先级", "状态"])
     for line in search_static_route(ft_policy):
         ws_route.append(line)
-    
+
+    # 创建表4（公网映射表）==> ["映射名称", "公网IP", "映射IP", "公网端口", "映射端口"]
+    ws_vip = wb.create_sheet("公网映射表")
+    ws_vip.append(["映射名称", "公网IP", "映射IP", "公网端口", "映射端口"])
+    for line in search_vip(ft_policy):
+        ws_vip.append(line)
+
     # 输出文件名格式：<hostname>-<timestamp>.xlsx
     wb.save(search_hostname(ft_policy) + time.strftime("-%Y%m%d", time.localtime()) + ".xlsx")
 
@@ -185,7 +215,7 @@ def main():
     from conf_parser import FortiGate
 
     # GLOBAL: 配置源文件路径
-    # path = "conf/Rexel_Wuhan_6-4_2092_202307251225.conf"
+    # path = "conf/xxx.conf"
 
     if not sys.argv[1]:
         print("请添加参数: fortigate配置文件路径")

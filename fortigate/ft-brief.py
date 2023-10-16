@@ -66,8 +66,57 @@ def search_interface(config):
 
 
 def search_ft_object(config):
-    # TODO: 查找 配置对象
-    pass
+    # 查找 配置对象
+    try:
+        _addr = config["CONFIG"]["config firewall address"]
+    except Exception as e:
+        print("No Address found.")
+        return []
+
+    for addr in _addr:
+        addr_name = list(addr.keys())[0].split("\"")[-2]
+        addr_value = ' '.join(list(addr.values())[0])
+
+        subnet_pat = r"set\ssubnet\s\d+\.\d+\.\d+\.\d+\s\d+\.\d+\.\d+\.\d+"
+        type_pat = r"set\stype\s\S+"
+        fqdn_pat = r"set\sfqdn\s\"\S+\""
+        intf_pat = r"set\sinterface\s\"\S+\""
+        asso_intf_pat = r"set\sassociated-interface\s\"\S+\""
+        start_ip_pat = r"set\sstart-ip\s\d+\.\d+\.\d+\.\d+"
+        end_ip_pat = r"set\send-ip\s\d+\.\d+\.\d+\.\d+"
+
+        subnet = re.search(subnet_pat, addr_value).group()[11:] if re.search(subnet_pat, addr_value) else "-"
+        subnet_range = subnet_caculator(subnet) if subnet_caculator(subnet) else "-"
+        type = re.search(type_pat, addr_value).group().split(" ")[-1] if re.search(type_pat, addr_value) else "-"
+        fqdn = re.search(fqdn_pat, addr_value).group().split(" ")[-1][1:-1] if re.search(fqdn_pat, addr_value) else "-"
+        intf = re.search(intf_pat, addr_value).group().split(" ")[-1][1:-1] if re.search(intf_pat, addr_value) else "-"
+        asso_intf = re.search(asso_intf_pat, addr_value).group().split(" ")[-1][1:-1] if re.search(asso_intf_pat, addr_value) else "-"
+        start_ip = re.search(start_ip_pat, addr_value).group().split(" ")[-1] if re.search(start_ip_pat, addr_value) else "-"
+        end_ip = re.search(end_ip_pat, addr_value).group().split(" ")[-1] if re.search(end_ip_pat, addr_value) else "-"
+        # 提取 comment
+        comment = "-"
+        for iid, item in enumerate(addr_value.split("\"")):
+            if "comment " in item:
+                comment = addr_value.split("\"")[iid + 1]
+                break
+        yield (addr_name, subnet, subnet_range, type, fqdn, intf, asso_intf, start_ip, end_ip, comment)
+
+
+def search_ft_object_group(config):
+    # 查找 配置对象组
+    try:
+        _addrgrp = config["CONFIG"]["config firewall addrgrp"]
+    except Exception as e:
+        print("No Address Group found.")
+        return []
+
+    for addrgrp in _addrgrp:
+        addrgrp_name = list(addrgrp.keys())[0].split("\"")[-2]
+        addrgrp_value = list(addrgrp.values())[0]
+
+        for item in addrgrp_value:
+            if "set member" in item:
+                yield (addrgrp_name, '\n'.join([member.strip("\"") for member in item.split(" ")[2:]]))
 
 
 def search_ipsecvpn(config):
@@ -76,6 +125,7 @@ def search_ipsecvpn(config):
         _phase1_config = config["CONFIG"]["config vpn ipsec phase1-interface"]
         _phase2_config = config["CONFIG"]["config vpn ipsec phase2-interface"]
     except Exception as e:
+        print("No IPSec VPN found.")
         return ({}, "")
 
     phase1 = dict()
@@ -122,7 +172,11 @@ def search_ipsecvpn(config):
 
 def search_static_route(config):
     # 查找 静态路由
-    _static_route = config["CONFIG"]["config router static"]
+    try:
+        _static_route = config["CONFIG"]["config router static"]
+    except Exception as e:
+        print("No Static Route found.")
+        return []
 
     dst_pat = r"set\sdst\s\d+\.\d+\.\d+\.\d+\s\d+\.\d+\.\d+\.\d+"   # 匹配目标段
     gateway_pat = r"set\sgateway\s\d+\.\d+\.\d+\.\d+"               # 匹配网关
@@ -149,8 +203,8 @@ def search_vip(config):
     try:
         _vip = config["CONFIG"]["config firewall vip"]
     except Exception as e:
-        print(e)
-        return None
+        print("No Virtual IP Service found.")
+        return []
 
     expip_pat = r"set\sextip\s\d+\.\d+\.\d+\.\d+"
     mappedip_pat = r"set\smappedip\s\"\d+\.\d+\.\d+\.\d+\""
@@ -203,8 +257,20 @@ def output_2_excel(ft_policy):
     for line in search_vip(ft_policy):
         ws_vip.append(line)
 
+    # 创建表5（对象表）==> ["对象名称", "子网", "类型", "fqdn", "接口", "关联接口", "起始IP", "结束IP"]
+    ws_addr = wb.create_sheet("对象表")
+    ws_addr.append(["对象名称", "子网", "子网范围", "类型", "fqdn", "接口", "关联接口", "起始IP", "结束IP", "备注"])
+    for line in search_ft_object(ft_policy):
+        ws_addr.append(line)
+
+    # 创建表6（对象组表）==> ["对象组名称", "成员"]
+    ws_addr = wb.create_sheet("对象组表")
+    ws_addr.append(["对象组名称", "成员"])
+    for line in search_ft_object_group(ft_policy):
+        ws_addr.append(line)
+
     # 输出文件名格式：<hostname>-<timestamp>.xlsx
-    wb.save(search_hostname(ft_policy) + time.strftime("-%Y%m%d", time.localtime()) + ".xlsx")
+    wb.save(search_hostname(ft_policy) + "-brief" + time.strftime("-%Y%m%d", time.localtime()) + ".xlsx")
 
 
 def main():
@@ -215,7 +281,7 @@ def main():
     from conf_parser import FortiGate
 
     # GLOBAL: 配置源文件路径
-    # path = "conf/xxx.conf"
+    path = "xxx/xxx.conf"
 
     if not sys.argv[1]:
         print("请添加参数: fortigate配置文件路径")

@@ -38,8 +38,14 @@ def parse_subnet(config):
         subnet_name = ''
         subnet_addr = ''
         for sub in item["subnets"]:
-            subnet_name += (sub["name"] + '\n')
-            subnet_addr += (sub["addressPrefix"] + '\n')
+            if sub.get("name"):
+                subnet_name += (sub["name"] + '\n')
+            else:
+                subnet_name += ('-\n')
+            if sub.get("addressPrefix"):
+                subnet_addr += (sub["addressPrefix"] + '\n')
+            else:
+                subnet_addr += ('-\n')
         subnet_name = subnet_name.strip()
         subnet_addr = subnet_addr.strip()
         yield (subnet_name, subnet_addr)

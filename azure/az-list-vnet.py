@@ -1,9 +1,12 @@
 #!/usr/local/bin/python3
 import os
 import json
-import subprocess
 import time
+import subprocess
+
 from tqdm import tqdm
+import pandas as pd
+from ipaddress import ip_network
 
 
 def json2dict(path):
@@ -94,20 +97,28 @@ def get_az_vnet(account, output="conf"):
         os.mkdir(output)
     cmd = 'az network vnet list --subscription "{}" > "{}/{}.json"'.format(account, output, account)
     subprocess.run(cmd, shell=True, check=True, capture_output=True, encoding="utf-8")
-    
+
+
+def change2IPV4(ip_addr):
+    # 选一个地址段做归一化处理
+    if len(ip_addr.split("\n")) > 1:
+        return ip_network(ip_addr.split("\n")[0])
+    return ip_network(ip_addr)
+
 
 def output2excel(output, conf_path="conf"):
     # PARAM:
     # output:    输出文件名
     # conf_path: 配置文件路径
 
-    from openpyxl import Workbook
-    wb = Workbook()
-    ws = wb.active
-    ws.append(["Azure CN Vnet 资源列表"])
-    ws.append(["订阅", "资源组", "虚拟网络名称", "类型", "位置", "地址空间", "子网名称", "子网地址空间", "对等名称", "对等互联状态", "对端路径", "对端地址空间"])
+    _TITLE = "Azure CN Vnet 资源列表"
+    COLUMNS = ["订阅", "资源组", "虚拟网络名称", "类型", "位置", "地址空间", "子网名称", "子网地址空间", "对等名称", "对等互联状态", "对端路径", "对端地址空间"]
 
     ls = os.listdir(conf_path)
+    DF = pd.DataFrame(columns=COLUMNS)
+
+    # 写入
+    index = 0
     for sub in tqdm(ls):
         config = json2dict(conf_path + os.sep + sub)
 
@@ -122,9 +133,17 @@ def output2excel(output, conf_path="conf"):
             peerings.append(peering)
 
         for a, b, c in zip(infos, subnets, peerings):
-            ws.append((sub[:-5],) + a + b + c)
+            DF.loc[index] = ((sub[:-5],) + a + b + c)
+            index += 1
 
-    wb.save(output + ".xlsx")
+    # 排序
+    DF["地址空间-bak"] = DF["地址空间"]
+    DF["地址空间-bak"] = DF["地址空间-bak"].apply(change2IPV4)
+    sorted_df = DF.sort_values(by="地址空间-bak")
+    sorted_df = sorted_df.drop("地址空间-bak", axis=1)
+
+    # 输出
+    sorted_df.to_excel(output + ".xlsx", index=False)
 
 
 if __name__ == "__main__":

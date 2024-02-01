@@ -58,8 +58,10 @@ if __name__ == "__main__":
     DOMAINS = arg.domains
     if arg.file:
         try:
-            with open(arg.file, 'r') as f:
-                DOMAINS = [line.strip().strip("\'\"") for line in f.readlines()]
+            DOMAINS = []
+            for file in arg.domains:
+                with open(file, 'r') as f:
+                    DOMAINS += [line.strip().strip("\'\"") for line in f.readlines()]
         except Exception:
             print("Invalid file path given.")
             sys.exit(-1)

@@ -4,9 +4,9 @@ import json
 import time
 import subprocess
 
-from tqdm import tqdm
 import pandas as pd
 from ipaddress import ip_network
+from tqdm import tqdm
 
 
 def json2dict(path):
@@ -99,6 +99,32 @@ def get_az_vnet(account, output="conf"):
     subprocess.run(cmd, shell=True, check=True, capture_output=True, encoding="utf-8")
 
 
+def caculate_idle_subnet(all_network: list, used_network: list):
+    # Func: 根据整体网段(all_network)和已用网段(used_network),输出空闲排序网段
+
+    try:
+        all_network = [ip_network(ip) for ip in all_network]
+        used_network = [ip_network(ip) for ip in used_network]
+    except Exception as e:
+        print(e)
+        return None
+
+    network_last = []
+    # 计算空闲子网
+    for cidr in used_network:
+        if not network_last:
+            network_last = all_network
+        temp = []
+        for block in network_last:
+            if cidr.subnet_of(block):
+                temp += list(block.address_exclude(cidr))
+                continue
+            temp += [block]
+        network_last = temp
+
+    return sorted(network_last)
+
+
 def change2IPV4(ip_addr):
     # 选一个地址段做归一化处理
     if len(ip_addr.split("\n")) > 1:
@@ -106,7 +132,7 @@ def change2IPV4(ip_addr):
     return ip_network(ip_addr)
 
 
-def output2excel(output, conf_path="conf"):
+def output2excel(output, conf_path="conf", network_all=""):
     # PARAM:
     # output:    输出文件名
     # conf_path: 配置文件路径
@@ -136,9 +162,25 @@ def output2excel(output, conf_path="conf"):
             DF.loc[index] = ((sub[:-5],) + a + b + c)
             index += 1
 
-    # 排序
+    # 地址归一化
     DF["地址空间-bak"] = DF["地址空间"]
     DF["地址空间-bak"] = DF["地址空间-bak"].apply(change2IPV4)
+
+    # 计算空闲子网
+    if network_all:
+        network_2_exclude = list(DF["地址空间-bak"])
+        ret = caculate_idle_subnet(network_all, network_2_exclude)
+
+        # 插入空闲网段行
+        if ret:
+            start = len(DF.index)
+            for cid, cidr in enumerate(ret):
+                print()
+                DF.loc[start + cid] = list(5*'-') + [str(cidr)] + list(6*'-') + [cidr]
+        else:
+            print("Idle Subnet Caculating Error.")
+
+    # 排序
     sorted_df = DF.sort_values(by="地址空间-bak")
     sorted_df = sorted_df.drop("地址空间-bak", axis=1)
 
@@ -147,13 +189,18 @@ def output2excel(output, conf_path="conf"):
 
 
 if __name__ == "__main__":
+    # 生成配置文件名
     CONF_PATH = time.strftime("vnet-conf-%y%m%d", time.localtime())
+
+    # 根据该网段,生成vnet未使用到的网段(可不加)
+    NETWORK_ALL = ["10.20.0.0/16"]
 
     if os.path.exists(CONF_PATH) and os.listdir(CONF_PATH):
         print("Config directory is not empty.")
 
+    # 拉取vnet配置
     for account in tqdm(get_az_account()):
         get_az_vnet(account, CONF_PATH)
 
-    output2excel("VNET-brief" + time.strftime("-%y%m%d", time.localtime()), CONF_PATH)
+    output2excel("VNET-brief" + time.strftime("-%y%m%d", time.localtime()), conf_path=CONF_PATH, network_all=NETWORK_ALL)
 

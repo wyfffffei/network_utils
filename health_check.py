@@ -38,20 +38,40 @@ def check_website_status(domain, protocal="https", timeout=5):
         return e
 
 
-def check_bandwidth(domain):
-    pass
+def check_bandwidth(domain, count=50):
+    try:
+        import ping3
+    except ModuleNotFoundError as e:
+        print(e)
+        return None
+
+    loss = 0
+    delay = 0
+    for n in range(count):
+        ret = ping3.ping(domain, unit='ms', timeout=1)
+        if ret is None:
+            loss += 1
+            continue
+        delay += ret
+
+    acc = (count - loss) * 100 / count
+    loss = loss * 100 / count
+    delay = delay / (count - loss)
+    # TODO: 方差计算
+    return f"Ping-Count: {str(count)}, Acc: {str(acc)}%, Loss: {str(loss)}%, Average-Delay: {str(delay)}ms."
 
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="CS: py health_check.py -d baidu.com google.com -r -s")
+    parser = argparse.ArgumentParser(description="CS: py health_check.py -d baidu.com google.com -r -s -p")
     parser.add_argument('-d', '--domains', required=True, type=str, nargs='+', help="")
     parser.add_argument('-f', '--file', action="store_true", help="Domains parameter includes path of domain file.")
     parser.add_argument('-r', '--resolve', action="store_true", help="Dns resolution.")
     parser.add_argument('-s', '--web_status', action="store_true", help="Website status code detection.")
+    parser.add_argument('-p', '--ping_bandwidth', action="store_true", help="Ping bandwidth status detection.")
     arg = parser.parse_args()
 
-    if not arg.resolve and not arg.web_status:
+    if not arg.resolve and not arg.web_status and not arg.ping_bandwidth:
         print("Invalid parameter given.")
         sys.exit(-1)
     
@@ -73,6 +93,9 @@ if __name__ == "__main__":
             print(ret)
         if arg.web_status:
             ret = check_website_status(domain)
+            print(ret)
+        if arg.ping_bandwidth:
+            ret = check_bandwidth(domain)
             print(ret)
         print()
 

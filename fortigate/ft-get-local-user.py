@@ -2,9 +2,17 @@
 import json
 import csv
 import re
+import sys
 
-with open("conf/xxx.conf_parsed.json", "r") as f:
-    data = json.loads(f.read())
+# XXX_CONF_PARSED.json
+try:
+    path = sys.argv[1]
+    with open(path, "r") as f:
+        data = json.loads(f.read())
+except Exception as e:
+    print("The parameter given is wrong.")
+    print(e)
+    sys.exit(-1)
 
 vpn_users = data["CONFIG"]["config user local"]
 vpn_group = data["CONFIG"]["config user group"]

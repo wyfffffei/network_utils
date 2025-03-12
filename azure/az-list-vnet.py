@@ -18,18 +18,57 @@ def json2dict(path):
         return json.loads(f.read())
 
 
-def parse_basic_info(config):
+def parse_basic_info(config, network_all=""):
     if not config:
         return None
 
-    # return -> (资源组, 虚拟网络名称, 类型, 位置, 地址空间)
+    # return -> (资源组, 资源类型, 虚拟网络名称, 类型, 位置, 地址空间, 地址类型)
     for item in config:
         res_group = item["resourceGroup"]
+
+        # 资源组所属环境判断
+        # xxx-d-xxx => dev
+        # xxx-p-xxx => prod
+        # xxx-u-xxx => uat
+        # xxx-q-xxx => qa
+        res_type = "-"
+        if "-d-" in res_group:
+            res_type = "dev"
+        if "-p" in res_group:
+            res_type = "prod"
+        if "-u-" in res_group:
+            res_type = "uat"
+        if "-q-" in res_group:
+            res_type = "qa"
+        
         vnet_name = item["name"]
         vnet_type = item["type"]
         location = item["location"]
         addrspace = '\n'.join(item["addressSpace"]["addressPrefixes"])
-        yield (res_group, vnet_name, vnet_type, location, addrspace)
+
+        addr_type = ""
+        if network_all:
+            # 地址空间类型判断
+            IP_DESIGN = {
+                "10.20.0.0/19": "prod",
+                "10.20.32.0/19": "qa",
+                "10.20.64.0/18": "dr",
+                "10.20.128.0/18": "prod",
+                "10.20.192.0/19": "uat",
+                "10.20.224.0/20": "uat",
+                "10.20.240.0/21": "uat",
+                "10.20.248.0/21": "dr",
+            }
+            for addr in item["addressSpace"]["addressPrefixes"]:
+                contain = False
+                for addr_design, env in IP_DESIGN.items():
+                    if ip_network(addr).subnet_of(ip_network(addr_design)):
+                        addr_type += ('\n'+env) if addr_type else env
+                        contain = True
+                        break
+                if not contain:
+                    addr_type += '\n-' if addr_type else '-'
+        yield (res_group, res_type, vnet_name, vnet_type, location, addrspace, addr_type)
 
 
 def parse_subnet(config):
@@ -138,7 +177,7 @@ def output2excel(output, conf_path="conf", network_all=""):
     # conf_path: 配置文件路径
 
     _TITLE = "Azure CN Vnet 资源列表"
-    COLUMNS = ["订阅", "资源组", "虚拟网络名称", "类型", "位置", "地址空间", "子网名称", "子网地址空间", "对等名称", "对等互联状态", "对端路径", "对端地址空间"]
+    COLUMNS = ["订阅", "资源组", "资源类型", "虚拟网络名称", "类型", "位置", "地址空间", "地址类型", "子网名称", "子网地址空间", "对等名称", "对等互联状态", "对端路径", "对端地址空间"]
 
     ls = os.listdir(conf_path)
     DF = pd.DataFrame(columns=COLUMNS)
@@ -151,7 +190,7 @@ def output2excel(output, conf_path="conf", network_all=""):
         infos = []
         subnets = []
         peerings = []
-        for info in parse_basic_info(config):
+        for info in parse_basic_info(config, network_all):
             infos.append(info)
         for subnet in parse_subnet(config):
             subnets.append(subnet)
@@ -175,8 +214,7 @@ def output2excel(output, conf_path="conf", network_all=""):
         if ret:
             start = len(DF.index)
             for cid, cidr in enumerate(ret):
-                print()
-                DF.loc[start + cid] = list(5*'-') + [str(cidr)] + list(6*'-') + [cidr]
+                DF.loc[start + cid] = list(6*'-') + [str(cidr)] + list(7*'-') + [cidr]
         else:
             print("Idle Subnet Caculating Error.")
 

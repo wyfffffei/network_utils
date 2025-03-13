@@ -34,9 +34,11 @@ def parse_basic_info(config, network_all=""):
         res_type = "-"
         if "-d-" in res_group:
             res_type = "dev"
-        if "-p" in res_group:
+        if "-p-" in res_group:
             res_type = "prod"
-        if "-u-" in res_group:
+        if "-cne3-" in res_group:
+            res_type = "dr"
+        if "-u-" in res_group or "-np-" in res_group:
             res_type = "uat"
         if "-q-" in res_group:
             res_type = "qa"
@@ -67,7 +69,7 @@ def parse_basic_info(config, network_all=""):
                         contain = True
                         break
                 if not contain:
-                    addr_type += '\n-' if addr_type else '-'
+                    addr_type += '\n不在大网段' if addr_type else '不在大网段'
         yield (res_group, res_type, vnet_name, vnet_type, location, addrspace, addr_type)
 
 

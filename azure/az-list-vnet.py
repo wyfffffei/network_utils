@@ -137,7 +137,10 @@ def get_az_vnet(account, output="conf"):
     if not os.path.exists(output):
         os.mkdir(output)
     cmd = 'az network vnet list --subscription "{}" > "{}/{}.json"'.format(account, output, account)
-    subprocess.run(cmd, shell=True, check=True, capture_output=True, encoding="utf-8")
+    try:
+        subprocess.run(cmd, shell=True, check=True, capture_output=True, encoding="utf-8")
+    except Exception as e:
+        print(e)
 
 
 def caculate_idle_subnet(all_network: list, used_network: list):
@@ -187,7 +190,11 @@ def output2excel(output, conf_path="conf", network_all=""):
     # 写入
     index = 0
     for sub in tqdm(ls):
-        config = json2dict(conf_path + os.sep + sub)
+        try:
+            config = json2dict(conf_path + os.sep + sub)
+        except Exception as e:
+            print(e)
+            continue
 
         infos = []
         subnets = []

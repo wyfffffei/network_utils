@@ -16,8 +16,8 @@ def json2dict(path):
     with open(path, 'r') as f:
         return json.loads(f.read())
 
-def list_nsg_rule(subscription, resource_group, nsg_name):
-    cmd = "az network nsg show --subscription {} -g {} -n {} > {}.json".format(subscription, resource_group, nsg_name, nsg_name)
+def list_nsg_rule(subscription, resource_group, nsg_name, timestamp):
+    cmd = "az network nsg show --subscription {} -g {} -n {} > {}{}.json".format(subscription, resource_group, nsg_name, nsg_name, timestamp)
     try:
         subprocess.run(cmd, shell=True, check=True, capture_output=True, encoding="utf-8")
     except Exception as e:
@@ -44,10 +44,18 @@ def output2excel(rule_list, filename):
         row = {col: d.get(col, "") for col in all_keys}
         df = pd.concat([df, pd.DataFrame([row], columns=all_keys)])
     
-    # 按优先级排序
-    # TODO: 按出入方向、优先级进行排序
-    # 写入Excel文件
-    df.to_excel(filename, index=False, header=False)
+    # 按优先级、出入方向排序
+    # 取出第一行
+    column_row = df.iloc[[0]]
+    data = df.iloc[1:]
+
+    # 剩下行按方向分组，按优先级排序
+    grouded_data = data.groupby("direction")
+    sorted_groups = pd.concat([group.sort_values("priority") for name, group in grouded_data])
+
+    # 合并第一行，写入Excel文件
+    result = pd.concat([column_row, sorted_groups])
+    result.to_excel(filename, index=False, header=False)
 
 
 if __name__ == "__main__":
@@ -72,6 +80,7 @@ if __name__ == "__main__":
     resource_group = arg.resource_group if arg.resource_group else resource_group
     nsg_name = arg.nsg_name if arg.nsg_name else nsg_name
 
-    list_nsg_rule(subscription, resource_group, nsg_name)
-    output2excel(parse_nsg_rule(nsg_name + ".json"), nsg_name + ".xlsx")
+    timestamp = time.strftime("-%y%m%d", time.localtime())
+    list_nsg_rule(subscription, resource_group, nsg_name, timestamp)
+    output2excel(parse_nsg_rule(nsg_name + timestamp + ".json"), nsg_name + timestamp + ".xlsx")
 

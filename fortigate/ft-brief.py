@@ -52,6 +52,7 @@ def search_interface(config):
         ip_pat = r"\d+\.\d+\.\d+\.\d+\s\d+\.\d+\.\d+\.\d+"                          # 正则匹配IP地址段
         root_int_pat = r"set\sinterface\s\"\S+\""                                   # 正则匹配父接口
         alias_pat = r"set\salias\s\"\S+\""                                          # 正则匹配接口别名
+        vlanid_pat = r"set\svlanid\s\d+"                                            # 正则匹配vlanid
 
         if re.search(ip_pat, intf):
             if re.search(root_int_pat, intf):
@@ -61,8 +62,9 @@ def search_interface(config):
                 intf_name = ""
             intf_alias = re.search(alias_pat, intf).group().split(" ")[-1].strip("\"") if re.search(alias_pat, intf) else ""
             ip_net = re.search(ip_pat, intf).group()
-            # return ->（接口、子接口、接口别名、地址段、地址段范围）
-            yield (root_int, intf_name, intf_alias, ip_net, subnet_caculator(ip_net))
+            vlanid = re.search(vlanid_pat, intf).group().split(" ")[-1] if re.search(vlanid_pat, intf) else ""
+            # return ->（接口、子接口、接口别名、vlanid、地址段、地址段范围）
+            yield (root_int, intf_name, intf_alias, vlanid, ip_net, subnet_caculator(ip_net))
 
 
 def search_ft_object(config):
@@ -227,10 +229,10 @@ def output_2_excel(ft_policy):
     from openpyxl import Workbook
     wb = Workbook()
 
-    # 创建表1（接口表）==> ["接口", "子接口", "接口别名", "地址段", "地址段范围"]
+    # 创建表1（接口表）==> ["接口", "子接口", "接口别名", "vlanid", "地址段", "地址段范围"]
     ws_interface = wb.active
     ws_interface.title = "接口表"
-    ws_interface.append(["接口", "子接口", "接口别名", "地址段", "地址段范围"])
+    ws_interface.append(["接口", "子接口", "接口别名", "vlanid", "地址段", "地址段范围"])
     for intf in search_interface(ft_policy):
         ws_interface.append(intf)
 

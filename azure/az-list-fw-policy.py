@@ -41,7 +41,7 @@ def list_fw_policy(subscription: str, resource_group: str, fw_name: str, policy_
                 for rule in rules["rules"]:
                     r_name = rule["name"]
                     r_ruleType = rule["ruleType"]
-                    r_description = rule["description"]
+                    r_description = rule["description"] if rule.get("description") else "-"
                     r_sourceAddresses = '\n'.join(rule["sourceAddresses"]) if rule.get("sourceAddresses") else "-"
                     r_sourceIpGroups = '\n'.join(rule["sourceIpGroups"]) if rule.get("sourceIpGroups") else "-"
                     r_destinationAddresses = '\n'.join(rule["destinationAddresses"]) if rule.get("destinationAddresses") else "-"
